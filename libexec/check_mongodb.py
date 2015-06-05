@@ -331,7 +331,10 @@ def check_connections(con, warning, critical, perf_data):
 def check_rep_lag(con, host, port, warning, critical, percent, perf_data, max_lag, user, passwd):
     # Get mongo to tell us replica set member name when connecting locally
     if "127.0.0.1" == host:
-        host = con.admin.command("ismaster","1")["me"].split(':')[0]
+        try:
+            host = con.admin.command("ismaster","1")["me"].split(':')[0]
+        except Exception, e:
+            return exit_with_general_critical(e)
 
     if percent:
         warning = warning or 50
@@ -673,7 +676,7 @@ def check_replset_state(con, perf_data, warning="", critical=""):
                 data = con.admin.command(son.SON([('replSetGetStatus', 1)]))
             state = int(data['myState'])
         except pymongo.errors.OperationFailure, e:
-            if e.code == None and str(e).find('failed: not running with --replSet"'):
+            if str(e).find('failed: not running with --replSet"'):
                 state = -1
 
         if state == 8:
@@ -1382,3 +1385,4 @@ def replication_get_time_diff(con):
 #
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
+
